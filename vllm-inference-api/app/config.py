@@ -1,6 +1,6 @@
 """
 Configuration management for vLLM inference API.
-All settings are configurable via environment variables for easy model swapping.
+All settings are configurable via environment variables for easy model swapping..
 """
 
 import os
@@ -26,7 +26,9 @@ class Config:
     # Batching and Performance
     MAX_NUM_SEQS: int = int(os.getenv("MAX_NUM_SEQS", "12"))
     MAX_BATCHED_TOKENS: int = int(os.getenv("MAX_BATCHED_TOKENS", "10240"))
-    ENABLE_CHUNKED_PREFILL: bool = os.getenv("ENABLE_CHUNKED_PREFILL", "true").lower() == "true"
+    ENABLE_CHUNKED_PREFILL: bool = (
+        os.getenv("ENABLE_CHUNKED_PREFILL", "true").lower() == "true"
+    )
 
     # Multimodal Limits
     IMAGE_LIMIT: int = int(os.getenv("IMAGE_LIMIT", "5"))
@@ -40,12 +42,16 @@ class Config:
 
     # Logging Settings
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    DISABLE_LOG_REQUESTS: bool = os.getenv("DISABLE_LOG_REQUESTS", "false").lower() == "true"
+    DISABLE_LOG_REQUESTS: bool = (
+        os.getenv("DISABLE_LOG_REQUESTS", "false").lower() == "true"
+    )
 
     # Timeout Settings
     IMAGE_FETCH_TIMEOUT: int = int(os.getenv("VLLM_IMAGE_FETCH_TIMEOUT", "30"))
     VIDEO_FETCH_TIMEOUT: int = int(os.getenv("VLLM_VIDEO_FETCH_TIMEOUT", "60"))
-    ENGINE_ITERATION_TIMEOUT: int = int(os.getenv("VLLM_ENGINE_ITERATION_TIMEOUT_S", "60"))
+    ENGINE_ITERATION_TIMEOUT: int = int(
+        os.getenv("VLLM_ENGINE_ITERATION_TIMEOUT_S", "60")
+    )
 
     # Attention Backend
     ATTENTION_BACKEND: str = os.getenv("VLLM_ATTENTION_BACKEND", "FLASH_ATTN")
@@ -57,13 +63,21 @@ class Config:
     def get_vllm_command(cls) -> list[str]:
         """Generate vLLM server command with all configuration options."""
         cmd = [
-            "vllm", "serve", cls.MODEL_NAME,
-            "--host", cls.HOST,
-            "--port", str(cls.VLLM_PORT),
-            "--max-model-len", str(cls.MAX_MODEL_LEN),
-            "--gpu-memory-utilization", str(cls.GPU_MEMORY_UTIL),
-            "--max-num-seqs", str(cls.MAX_NUM_SEQS),
-            "--max-num-batched-tokens", str(cls.MAX_BATCHED_TOKENS),
+            "vllm",
+            "serve",
+            cls.MODEL_NAME,
+            "--host",
+            cls.HOST,
+            "--port",
+            str(cls.VLLM_PORT),
+            "--max-model-len",
+            str(cls.MAX_MODEL_LEN),
+            "--gpu-memory-utilization",
+            str(cls.GPU_MEMORY_UTIL),
+            "--max-num-seqs",
+            str(cls.MAX_NUM_SEQS),
+            "--max-num-batched-tokens",
+            str(cls.MAX_BATCHED_TOKENS),
         ]
 
         # Parallelism
@@ -86,6 +100,7 @@ class Config:
 
         if mm_limits:
             import json
+
             cmd.extend(["--limit-mm-per-prompt", json.dumps(mm_limits)])
 
         # Performance optimizations
@@ -132,6 +147,7 @@ class Config:
         if cls.TENSOR_PARALLEL_SIZE > 1:
             try:
                 import torch
+
                 gpu_count = torch.cuda.device_count()
                 if cls.TENSOR_PARALLEL_SIZE > gpu_count:
                     issues.append(
