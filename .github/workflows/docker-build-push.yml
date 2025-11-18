@@ -1,9 +1,16 @@
 name: Build and Push Docker Image
 
 on:
-  # Automatic builds disabled due to GitHub Actions disk space limitations
-  # To build and push manually: cd vllm-inference-api && ./build_and_push.sh <dockerhub-username>
-  # Or trigger manually below if you have a self-hosted runner with more disk space
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 env:
@@ -54,6 +61,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./vllm-inference-api
+          file: ./vllm-inference-api/Dockerfile.lightweight
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
