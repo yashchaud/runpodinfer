@@ -1,16 +1,9 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - "v*"
-  pull_request:
-    branches:
-      - main
-      - master
+  # Automatic builds disabled due to GitHub Actions disk space limitations
+  # To build and push manually: cd vllm-inference-api && ./build_and_push.sh <dockerhub-username>
+  # Or trigger manually below if you have a self-hosted runner with more disk space
   workflow_dispatch:
 
 env:
