@@ -17,12 +17,16 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN python3 -m pip install --upgrade pip setuptools wheel
+# Upgrade pip and clean up in same layer
+RUN python3 -m pip install --upgrade pip setuptools wheel && \
+    rm -rf /root/.cache/pip
 
-# Install Python dependencies
+# Install Python dependencies and clean up in same layer to save space
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -rf /root/.cache/pip && \
+    find /usr/local/lib/python3.10/dist-packages -name "*.pyc" -delete && \
+    find /usr/local/lib/python3.10/dist-packages -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # Runtime stage
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
