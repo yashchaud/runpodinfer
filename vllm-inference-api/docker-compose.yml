@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  vllm-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vllm-inference-api:latest
+    container_name: vllm-inference
+    ports:
+      - "8000:8000"
+    environment:
+      # Model configuration - CHANGE THIS TO SWAP MODELS
+      - MODEL_NAME=Qwen/Qwen2-VL-7B-Instruct
+      - HF_TOKEN=${HF_TOKEN}  # Optional: for private models
+
+      # Performance settings
+      - MAX_MODEL_LEN=32768
+      - GPU_MEMORY_UTIL=0.95
+      - TENSOR_PARALLEL_SIZE=1
+      - MAX_NUM_SEQS=12
+      - MAX_BATCHED_TOKENS=10240
+
+      # Multimodal limits
+      - IMAGE_LIMIT=5
+      - VIDEO_LIMIT=1
+      - AUDIO_LIMIT=0
+
+      # Server settings
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=INFO
+
+      # Advanced settings
+      - ENABLE_CHUNKED_PREFILL=true
+      - TRUST_REMOTE_CODE=true
+      - VLLM_ATTENTION_BACKEND=FLASH_ATTN
+      - VLLM_IMAGE_FETCH_TIMEOUT=30
+      - VLLM_VIDEO_FETCH_TIMEOUT=60
+
+    volumes:
+      # Cache HuggingFace models to avoid re-downloading
+      - huggingface-cache:/root/.cache/huggingface
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+    restart: unless-stopped
+
+  # Optional: Prometheus for metrics monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vllm-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vllm-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  huggingface-cache:
+  prometheus-data:
+  grafana-data:
